@@ -22,3 +22,7 @@ variable "abbr_location" {
 variable "oauth_client_id" {}
 
 variable "oauth_client_secret" {}
+
+variable "db_deletion_protection" {
+  default = true
+}
