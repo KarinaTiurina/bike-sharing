@@ -8,7 +8,7 @@ output "gcr_bucket_uri" {
 }
 
 data "google_container_registry_repository" "container_registry_repo" {
-    region = var.abbr_location
+  region = var.abbr_location
 }
 output "gcr_uri" {
   value = data.google_container_registry_repository.container_registry_repo.repository_url
