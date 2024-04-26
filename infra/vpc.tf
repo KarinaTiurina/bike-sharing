@@ -20,23 +20,23 @@ resource "google_compute_subnetwork" "public_subnetwork" {
   region        = var.region
   network       = google_compute_network.vpc_network.id
 
-  purpose    = "REGIONAL_MANAGED_PROXY"
-  stack_type = "IPV4_ONLY"
+  purpose = "REGIONAL_MANAGED_PROXY"
+  role    = "ACTIVE"
 }
 
-resource "google_certificate_manager_certificate" "web_certificate" {
-  name     = "web-certificate"
-  location = var.region
-  scope    = "EDGE_CACHE"
-  managed {
-    domains = [
-      google_certificate_manager_dns_authorization.customer_instance.domain,
-    ]
-    dns_authorizations = [
-      google_certificate_manager_dns_authorization.customer_instance.id,
-    ]
-  }
-}
+# resource "google_certificate_manager_certificate" "web_certificate" {
+#   name     = "web-certificate"
+#   location = var.region
+#   scope    = "DEFAULT"
+#   managed {
+#     domains = [
+#       google_certificate_manager_dns_authorization.customer_instance.domain,
+#     ]
+#     dns_authorizations = [
+#       google_certificate_manager_dns_authorization.customer_instance.id,
+#     ]
+#   }
+# }
 
 resource "google_certificate_manager_dns_authorization" "customer_instance" {
   name   = "dns-auth"

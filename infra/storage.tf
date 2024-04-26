@@ -23,9 +23,9 @@ resource "google_bigtable_instance" "bigtable_real_time" {
     iterator = replica_zone
 
     content {
-      cluster_id   = "bigtable-replica-cluster-${replica_zone.value}"
+      cluster_id   = "bigtable-r-${replica_zone.value}"
       num_nodes    = 1
-      storage_type = "HDD"
+      storage_type = "SSD"
       zone         = replica_zone.value
     }
   }
