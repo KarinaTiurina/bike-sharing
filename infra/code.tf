@@ -123,9 +123,9 @@ resource "google_cloud_run_v2_service" "customer_fe" {
     timeout = "5s"
 
     containers {
-      image = data.google_container_registry_image.customer_fe_image.image_url
+      image = "europe-central2-docker.pkg.dev/bikesharing-420214/bike-sharing/bs-frontend-amd64"
       ports {
-        container_port = 443
+        container_port = 3000
       }
     }
 
