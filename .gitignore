@@ -3,5 +3,5 @@ terraform.tfvars
 terraform.tfstate*
 
 
-frontend/.env
-frontend/node_modules
+customer-fe/.env
+customer-fe/node_modules

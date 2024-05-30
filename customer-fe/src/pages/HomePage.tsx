@@ -44,14 +44,8 @@ interface Bike {
   lng: number
 }
 
-const BikeMarker = ({ lat, lng, text }: AnyReactProps) => <div>
-    <IconButton>
-      <RoomTwoToneIcon color="warning" />
-    </IconButton>
-</div>;
-
 const CurrentLocation = ({ lat, lng } : AnyReactProps) => <div>
-    <NavigationTwoToneIcon color="success"/>
+    <NavigationTwoToneIcon/>
 </div>
 
 const Marker = ({ children }: any) => children;
