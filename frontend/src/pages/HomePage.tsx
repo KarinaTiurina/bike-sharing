@@ -7,6 +7,28 @@ import Box from '@mui/material/Box';
 import { callNextBikesApi } from '../api/bikes';
 import IconButton from '@mui/material/IconButton';
 import useSupercluster from 'use-supercluster';
+import Badge, { BadgeProps } from '@mui/material/Badge';
+
+// Bottom Navigation
+import BottomNavigation from '@mui/material/BottomNavigation';
+import BottomNavigationAction from '@mui/material/BottomNavigationAction';
+import FolderIcon from '@mui/icons-material/Folder';
+import RestoreIcon from '@mui/icons-material/Restore';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import Paper from '@mui/material/Paper';
+
+// Bikes list on the right
+import SwipeableDrawer from '@mui/material/SwipeableDrawer';
+import Button from '@mui/material/Button';
+import List from '@mui/material/List';
+import Divider from '@mui/material/Divider';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import InboxIcon from '@mui/icons-material/MoveToInbox';
+import MailIcon from '@mui/icons-material/Mail';
 
 import './HomePage.css'
 
@@ -54,15 +76,6 @@ const SimpleMap = () => {
 
   const [bounds, setBounds] = useState<any>(null);
   const [zoom, setZoom] = useState(14);
-  // const [clusters, setClusters] = useState<any>([]);
-  // const [supercluster, setSupercluster] = useState<any>(null);
-  // const [mapRef, setMapRef] = useState<any>(null);
-
-  // useEffect(() => {
-  //   const mapReference:any = useRef();
-  //   setMapRef(mapReference);
-  // }, [])
-  
 
   useEffect(() => {
     setApikey(process.env.REACT_APP_GOOGLE_MAP_API_KEY as string);
@@ -117,24 +130,12 @@ const SimpleMap = () => {
   }
 
   // get clusters
-  // useEffect(() => {
-  //   const { clusters, supercluster } = useSupercluster({
-  //     points: bikesToPointsConverter(),
-  //     bounds,
-  //     zoom,
-  //     options: { radius: 75, maxZoom: 20 }
-  //   });
-  //   setClusters(clusters);
-  //   setSupercluster(supercluster);
-  // }, [zoom, bounds, bikes])
   const { clusters, supercluster } = useSupercluster({
     points: bikesToPointsConverter(),
     bounds,
     zoom,
     options: { radius: 75, maxZoom: 20 }
   });
-  // setClusters(clusters);
-  // setSupercluster(supercluster);
 
 
   const onMapChange = (event:any) => {
@@ -145,6 +146,13 @@ const SimpleMap = () => {
       event.bounds.se.lng,
       event.bounds.nw.lat
     ]);
+  }
+
+  const [selectedCluster, setSelectedCluster] = useState(0);
+
+  const onBikeMarkerClick = (e: React.MouseEvent<HTMLButtonElement>, clusterId: number) => {
+    setSelectedCluster(clusterId);
+    setShowBikesList(true)
   }
 
   const renderBikeMarkers = () => {
@@ -161,44 +169,114 @@ const SimpleMap = () => {
             key={`cluster-${cluster.id}`}
             lat={latitude}
             lng={longitude}
-          >
-            <div
-              className="cluster-marker"
-              style={{
-                width: `${10 + (pointCount / bikes.length) * 20}px`,
-                height: `${10 + (pointCount / bikes.length) * 20}px`
-              }}
-              onClick={() => {
-                const expansionZoom = Math.min(
-                  supercluster.getClusterExpansionZoom(cluster.id),
-                  20
-                );
-                mapRef.current.setZoom(expansionZoom);
-                mapRef.current.panTo({ lat: latitude, lng: longitude });
-              }}
-            >
-              {pointCount}
-            </div>
+          >            
+            <IconButton onClick={(e) => onBikeMarkerClick(e, cluster.id)}>
+              <Badge badgeContent={pointCount} color="warning">
+                  <RoomTwoToneIcon />
+              </Badge>
+            </IconButton>
           </Marker>
         );
-      } else {
-        // return (
-        //   <Marker
-        //     key={`crime-${cluster.properties.crimeId}`}
-        //     lat={latitude}
-        //     lng={longitude}
-        //   >
-        //     {/* <button className="crime-marker">
-        //       <img src="/custody.svg" alt="crime doesn't pay" />
-        //     </button> */}
-        //     <IconButton>
-        //       <RoomTwoToneIcon color="warning" />
-        //     </IconButton>
-  
-        //   </Marker>
-        // );
       }
     })
+  }
+
+  const [bnValue, setBnValue] = React.useState('recents');
+
+  const defaultMapOptions:any = {
+    fullscreenControl: false,
+    zoomControl: false,
+    gestureHandling: "greedy",
+  };
+
+  const renderBottomNavigation = () => {
+    return (
+      <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
+        <BottomNavigation
+          showLabels
+          value={bnValue}
+          onChange={(event, newValue) => {
+            setBnValue(newValue);
+          }}
+        >
+          <BottomNavigationAction label="Recents" icon={<RestoreIcon />} />
+          <BottomNavigationAction label="Favorites" icon={<FavoriteIcon />} />
+          <BottomNavigationAction label="Folder" icon={<FolderIcon />} />
+        </BottomNavigation>
+      </Paper>
+    );
+  }
+
+  const [showBikesList, setShowBikesList] = useState(false);
+
+  const toggleDrawer = (open: boolean) =>
+    (event: React.KeyboardEvent | React.MouseEvent) => {
+      if (
+        event &&
+        event.type === 'keydown' &&
+        ((event as React.KeyboardEvent).key === 'Tab' ||
+          (event as React.KeyboardEvent).key === 'Shift')
+      ) {
+        console.log('return')
+        return;
+      }
+      setShowBikesList(open);
+  };
+
+  const list = () => (
+    <Box
+      sx={{ width: 250 }}
+      role="presentation"
+      onClick={toggleDrawer(false)}
+      onKeyDown={toggleDrawer(false)}
+    >
+      <List>
+        {['Inbox', 'Starred', 'Send email', 'Drafts'].map((text, index) => (
+          <ListItem key={text} disablePadding>
+            <ListItemButton>
+              <ListItemIcon>
+                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+              </ListItemIcon>
+              <ListItemText primary={selectedCluster} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider />
+      <List>
+        {['All mail', 'Trash', 'Spam'].map((text, index) => (
+          <ListItem key={text} disablePadding>
+            <ListItemButton>
+              <ListItemIcon>
+                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+              </ListItemIcon>
+              <ListItemText primary={text} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
+
+  const iOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+  const renderListOfBikes = () => {
+    const anchor = 'right';
+    return (
+      <React.Fragment key={anchor}>
+        {/* <Button onClick={toggleDrawer(true)}>{anchor}</Button> */}
+        <SwipeableDrawer
+          anchor={anchor}
+          open={showBikesList}
+          onClose={toggleDrawer(false)}
+          onOpen={toggleDrawer(true)}
+          disableBackdropTransition={!iOS}
+          disableDiscovery={iOS}
+        >
+          {list()}
+        </SwipeableDrawer>
+    </React.Fragment>
+    );
   }
 
   return (
@@ -209,20 +287,13 @@ const SimpleMap = () => {
           defaultCenter={defaultProps.center}
           defaultZoom={defaultProps.zoom}
           center={currentLocation.center}
+          options={defaultMapOptions}
           yesIWantToUseGoogleMapApiInternals
           onGoogleApiLoaded={({ map }) => {
             mapRef.current = map;
           }}
           onChange={onMapChange}
         >
-          {/* {bikes.map(bike => {
-            return (<BikeMarker
-              lat={bike.lat}
-              lng={bike.lng}
-              key={bike.number}
-              text={bike.number}
-            />);
-          })} */}
           {renderBikeMarkers()}
           
           {currentLocation.isLoaded &&
@@ -235,6 +306,10 @@ const SimpleMap = () => {
       {!apiKey && <Box sx={{ display: 'flex' }}>
         <CircularProgress color='warning' className='loader' />
       </Box>}
+
+      {renderListOfBikes()}
+
+      {renderBottomNavigation()}
     </div>
   );
 }
@@ -244,6 +319,7 @@ const HomePage: React.FC = () => {
         <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
             <SimpleMap />
         </div>
+        
     )
 }
 
