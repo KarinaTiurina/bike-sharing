@@ -5,6 +5,7 @@ import NavigationTwoToneIcon from '@mui/icons-material/NavigationTwoTone';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
 import { callNextBikesApi } from '../api/bikes';
+import { callNearBySearch } from '../api/maps';
 import IconButton from '@mui/material/IconButton';
 import useSupercluster from 'use-supercluster';
 import Badge, { BadgeProps } from '@mui/material/Badge';
@@ -45,6 +46,13 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import Chip from '@mui/material/Chip';
 
+// Tabs
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+
+import ModeOfTravelIcon from '@mui/icons-material/ModeOfTravel';
+import FestivalTwoToneIcon from '@mui/icons-material/FestivalTwoTone';
+
 import './HomePage.css'
 
 interface AnyReactProps {
@@ -69,6 +77,8 @@ const Marker = ({ children }: any) => children;
 
 const SimpleMap = () => {
   const mapRef:any = useRef(null);
+  const placesServiceRef:any = useRef(null);
+  const [mapsObj, setMapsObj] = useState<any>(null);
 
   const defaultProps = {
     center: {
@@ -83,25 +93,45 @@ const SimpleMap = () => {
     center: defaultProps.center,
     isLoaded: false
   });
+  const [centerLocation, setCenterLocation] = useState({
+    center: defaultProps.center,
+    isLoaded: false
+  });
   const [bikes, setBikes] = useState<Bike[]>([])
 
   const [bounds, setBounds] = useState<any>(null);
   const [zoom, setZoom] = useState(14);
+
+  const [tabValue, setTabValue] = React.useState(0);
+  const [places, setPlaces] = useState<any[]>([]);
+
+  const [selectedCluster, setSelectedCluster] = useState(0);
+
+  const [placeMarkers, setPlaceMarkers] = useState<any[]>([]);
 
   useEffect(() => {
     setApikey(process.env.REACT_APP_GOOGLE_MAP_API_KEY as string);
       if (navigator.geolocation) {
         navigator.permissions.query({name:'geolocation'}).then(permissionStatus => {
             if (permissionStatus.state === 'granted') {
-              navigator.geolocation.getCurrentPosition(pos => setCurrentLocation({
-                center: {
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude
-                },
-                isLoaded: true
-              }));
+              navigator.geolocation.getCurrentPosition(pos => {
+                setCurrentLocation({
+                  center: {
+                      lat: pos.coords.latitude,
+                      lng: pos.coords.longitude
+                  },
+                  isLoaded: true
+                })
+                setCenterLocation({
+                  center: {
+                      lat: pos.coords.latitude,
+                      lng: pos.coords.longitude
+                  },
+                  isLoaded: true
+                })
+              });
             } else {
-              alert('Please allow location access.');
+              console.log('Please allow location access.');
             }
         });
       } else {
@@ -109,6 +139,42 @@ const SimpleMap = () => {
       } 
 
   }, []);
+
+  async function fetchPlaces(lat: any, lng: any) {
+    if (mapsObj) {
+      const location = new mapsObj.LatLng(lat, lng);
+      const request = {
+        location: location,
+        radius: '1000',
+        type: ['tourist_attraction']
+      };
+      try {
+        placesServiceRef.current.nearbySearch(request, (response:any, status:any) => {
+          if (status === mapsObj.places.PlacesServiceStatus.OK) {
+            setPlaces(response);
+          } else {
+            console.error('Places search failed:', status);
+          } 
+        })
+      } catch(error) {
+        console.log(error)
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (tabValue == 1 && selectedCluster) {
+      try {
+        const cluster = supercluster.getChildren(selectedCluster);
+        if (cluster.length) {
+          const coords = cluster[0].geometry.coordinates;
+          fetchPlaces(coords[1], coords[0])
+        }
+      } catch(e) {
+        console.log(e)
+      }
+    }
+  }, [tabValue, selectedCluster])
 
   async function fetchBikes() {
     const fetched: Bike[] = await callNextBikesApi();
@@ -148,8 +214,6 @@ const SimpleMap = () => {
     ]);
   }
 
-  const [selectedCluster, setSelectedCluster] = useState(0);
-
   const onBikeMarkerClick = (e: React.MouseEvent<HTMLButtonElement>, clusterId: number) => {
     setSelectedCluster(clusterId);
     setShowBikesList(true)
@@ -178,6 +242,22 @@ const SimpleMap = () => {
           </Marker>
         );
       }
+    })
+  }
+
+  const renderPlaceMarkers = () => {
+    return placeMarkers.map((m: any) => {
+      return (
+        <Marker
+          key={`place-${m.place_id}`}
+          lat={m.geometry.location.lat()}
+          lng={m.geometry.location.lng()}
+        >            
+          <IconButton title={m.name}>
+            <FestivalTwoToneIcon color="secondary" />
+          </IconButton>
+        </Marker>
+      );
     })
   }
 
@@ -225,7 +305,7 @@ const SimpleMap = () => {
 
   const renderBikesList = (bikes: Bike[]) => (
     <Box
-      sx={{ width: 400, maxWidth: '90%' }}
+      sx={{ width: 400 }}
       role="presentation"
       onClick={toggleDrawer(false)}
       onKeyDown={toggleDrawer(false)}
@@ -257,6 +337,63 @@ const SimpleMap = () => {
     </Box>
   );
 
+  const onPlaceShow = (e: any, place: any) => {
+    e.preventDefault();
+    setPlaceMarkers([place]);
+    setZoom(24)
+    setCenterLocation({
+      center: {
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng()
+      },
+      isLoaded: true
+    });
+  }
+
+  const renderSightseeingList = () => (
+    <Box
+    sx={{ width: 400 }}
+    role="presentation"
+    onClick={toggleDrawer(false)}
+    onKeyDown={toggleDrawer(false)}
+  >
+    {places.map(p => (
+      <Card sx={{ display: 'flex', margin: 1 }} key={p.place_id} variant="outlined">
+        <Box sx={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
+          <CardContent sx={{ flex: '1 0 auto' }}>
+            <Typography component="div" variant="h6">
+              {p.name}
+            </Typography>
+            <Typography variant="subtitle1" color="text.secondary" component="div">
+              <Chip label={p.rating} size='small' />
+            </Typography>
+          </CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', pl: 1, pb: 1 }}>
+            <Button variant="contained" size='small' onClick={(e) => onPlaceShow(e, p)}>Show</Button>
+          </Box>
+        </Box>
+        {p.photos?.length &&
+          <CardMedia
+            component="img"
+            sx={{ width: '50%', maxHeight: 150, objectFit: "contain" }}
+            image={p.photos[0].getUrl()}
+            alt={p.name}
+          />
+        }
+        {!p.photos?.length &&
+          <CardMedia
+            component="img"
+            sx={{ width: '50%', maxHeight: 150, objectFit: "contain" }}
+            image={`building-photo.png`}
+            alt={p.name}
+          />
+        }
+      </Card>
+    ))}
+    {!places?.length && <p>Sorry, nothing interesting in 1 km...</p>}
+  </Box>
+  );
+
   const iOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
 
   const renderListOfBikes = () => {
@@ -275,36 +412,87 @@ const SimpleMap = () => {
               disableBackdropTransition={!iOS}
               disableDiscovery={iOS}
             >
-              <Box component="section" sx={{ p: 2 }} alignItems="center" display="flex">
-                <h1>Available Bikes ({bikes.length})</h1>
+              <Box component="section" sx={{ minWidth: 350 }} alignItems="center">
+                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                  <Tabs value={tabValue} onChange={handleChange} aria-label="basic tabs example">
+                    <Tab label="Bikes" {...a11yProps(0)} />
+                    <Tab label="Sightseeing" {...a11yProps(1)} />
+                  </Tabs>
+                </Box>
+                <CustomTabPanel value={tabValue} index={0}>
+                  {renderBikesList(bikes)}
+                </CustomTabPanel>
+                <CustomTabPanel value={tabValue} index={1}>
+                  {renderSightseeingList()}
+                </CustomTabPanel>
               </Box>
-              {renderBikesList(bikes)}
+              {/* <Box component="section" sx={{ p: 2 }} alignItems="center" display="flex">
+                <h1>Available Bikes ({bikes.length})</h1>
+              </Box> */}
+              
             </SwipeableDrawer>
         </React.Fragment>
       );
       } catch (e) {
+        console.log(e)
         return <></>
       }
     }    
     return <></>
   }
 
+  interface TabPanelProps {
+    children?: React.ReactNode;
+    index: number;
+    value: number;
+  }
+
+  function CustomTabPanel(props: TabPanelProps) {
+    const { children, value, index, ...other } = props;
+  
+    return (
+      <div
+        role="tabpanel"
+        hidden={value !== index}
+        id={`simple-tabpanel-${index}`}
+        aria-labelledby={`simple-tab-${index}`}
+        {...other}
+      >
+        {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      </div>
+    );
+  }
+
+  function a11yProps(index: number) {
+    return {
+      id: `simple-tab-${index}`,
+      'aria-controls': `simple-tabpanel-${index}`,
+    };
+  }
+
+  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
   return (
     <div style={{ height: '100vh', width: '100%' }}>
       {apiKey &&
         <GoogleMapReact
-          bootstrapURLKeys={{ key: apiKey }}
+          bootstrapURLKeys={{ key: apiKey, libraries: ['places'] }}
           defaultCenter={defaultProps.center}
           defaultZoom={defaultProps.zoom}
-          center={currentLocation.center}
+          center={centerLocation.center}
           options={defaultMapOptions}
           yesIWantToUseGoogleMapApiInternals
-          onGoogleApiLoaded={({ map }) => {
+          onGoogleApiLoaded={({ map, maps }) => {
             mapRef.current = map;
+            placesServiceRef.current = new maps.places.PlacesService(map);
+            setMapsObj(maps)
           }}
           onChange={onMapChange}
         >
           {renderBikeMarkers()}
+          {renderPlaceMarkers()}
           
           {currentLocation.isLoaded &&
             <CurrentLocation
@@ -319,7 +507,7 @@ const SimpleMap = () => {
 
       {renderListOfBikes()}
 
-      {renderBottomNavigation()}
+      {/* {renderBottomNavigation()} */}
     </div>
   );
 }

@@ -19,7 +19,7 @@ const callNextBikesApi = async () => {
         type: bike.bike_type
       })
     })
-
+    
   })
   return bikes;
 }
