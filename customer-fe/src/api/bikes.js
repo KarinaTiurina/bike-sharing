@@ -15,7 +15,8 @@ const callNextBikesApi = async () => {
     place.bike_list.forEach(bike => {
       bikes.push({
         id: bike.number,
-        lat, lng
+        lat, lng,
+        type: bike.bike_type
       })
     })
 

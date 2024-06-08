@@ -8,6 +8,7 @@ import { callNextBikesApi } from '../api/bikes';
 import IconButton from '@mui/material/IconButton';
 import useSupercluster from 'use-supercluster';
 import Badge, { BadgeProps } from '@mui/material/Badge';
+import PedalBikeIcon from '@mui/icons-material/PedalBike';
 
 // Bottom Navigation
 import BottomNavigation from '@mui/material/BottomNavigation';
@@ -30,6 +31,20 @@ import ListItemText from '@mui/material/ListItemText';
 import InboxIcon from '@mui/icons-material/MoveToInbox';
 import MailIcon from '@mui/icons-material/Mail';
 
+import ListItemAvatar from '@mui/material/ListItemAvatar';
+import Avatar from '@mui/material/Avatar';
+import ImageIcon from '@mui/icons-material/Image';
+
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardMedia from '@mui/material/CardMedia';
+// import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import SkipNextIcon from '@mui/icons-material/SkipNext';
+import Chip from '@mui/material/Chip';
+
 import './HomePage.css'
 
 interface AnyReactProps {
@@ -39,9 +54,11 @@ interface AnyReactProps {
 }
 
 interface Bike {
-  number: string,
+  id: string,
+  bikeId?: string,
   lat: number,
-  lng: number
+  lng: number,
+  type: number
 }
 
 const CurrentLocation = ({ lat, lng } : AnyReactProps) => <div>
@@ -103,21 +120,10 @@ const SimpleMap = () => {
   }, [])
 
   const bikesToPointsConverter = () => {
-    [
-      {
-        "type": "Feature",
-        "properties": {
-          "cluster": false,
-          "crimeId": 78212911,
-          "category": "anti-social-behaviour"
-        },
-        "geometry": { "type": "Point", "coordinates": [-1.135171, 52.6376] }
-      }
-    ]
     return bikes.map(b => {
       return {
         type: "Feature",
-        properties: { cluster: false, bikeId: b.number },
+        properties: { cluster: false, bikeId: b.id, type: b.type },
         geometry: { type: "Point", coordinates: [b.lng, b.lat]}
       }
     })
@@ -217,38 +223,37 @@ const SimpleMap = () => {
       setShowBikesList(open);
   };
 
-  const list = () => (
+  const renderBikesList = (bikes: Bike[]) => (
     <Box
-      sx={{ width: 250 }}
+      sx={{ width: 400, maxWidth: '90%' }}
       role="presentation"
       onClick={toggleDrawer(false)}
       onKeyDown={toggleDrawer(false)}
     >
-      <List>
-        {['Inbox', 'Starred', 'Send email', 'Drafts'].map((text, index) => (
-          <ListItem key={text} disablePadding>
-            <ListItemButton>
-              <ListItemIcon>
-                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-              </ListItemIcon>
-              <ListItemText primary={selectedCluster} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-      <Divider />
-      <List>
-        {['All mail', 'Trash', 'Spam'].map((text, index) => (
-          <ListItem key={text} disablePadding>
-            <ListItemButton>
-              <ListItemIcon>
-                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-              </ListItemIcon>
-              <ListItemText primary={text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
+      {bikes.map(b => (
+        <Card sx={{ display: 'flex', margin: 1 }} key={b.id} variant="outlined">
+          <Box sx={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
+            <CardContent sx={{ flex: '1 0 auto' }}>
+              <Typography component="div" variant="h6">
+                Bike: {b.bikeId}
+              </Typography>
+              <Typography variant="subtitle1" color="text.secondary" component="div">
+                <Chip label="Free" size='small' />
+              </Typography>
+            </CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', pl: 1, pb: 1 }}>
+              <Button variant="contained" size='small'>Rent</Button>
+              <Button variant="outlined" size='small'>Book</Button>
+            </Box>
+          </Box>
+          <CardMedia
+            component="img"
+            sx={{ width: '50%', maxHeight: 150, objectFit: "contain" }}
+            image={`./bike_types/${b.type}.png`}
+            alt={`Bike type: ${b.type}`}
+          />
+        </Card>
+      ))}
     </Box>
   );
 
@@ -256,21 +261,32 @@ const SimpleMap = () => {
 
   const renderListOfBikes = () => {
     const anchor = 'right';
-    return (
-      <React.Fragment key={anchor}>
-        {/* <Button onClick={toggleDrawer(true)}>{anchor}</Button> */}
-        <SwipeableDrawer
-          anchor={anchor}
-          open={showBikesList}
-          onClose={toggleDrawer(false)}
-          onOpen={toggleDrawer(true)}
-          disableBackdropTransition={!iOS}
-          disableDiscovery={iOS}
-        >
-          {list()}
-        </SwipeableDrawer>
-    </React.Fragment>
-    );
+    if (selectedCluster) {
+      try {
+        const bikes = supercluster.getChildren(selectedCluster).map((o: any) => o.properties)
+        // console.log(bikes)
+        return (
+          <React.Fragment key={anchor}>
+            <SwipeableDrawer
+              anchor={anchor}
+              open={showBikesList}
+              onClose={toggleDrawer(false)}
+              onOpen={toggleDrawer(true)}
+              disableBackdropTransition={!iOS}
+              disableDiscovery={iOS}
+            >
+              <Box component="section" sx={{ p: 2 }} alignItems="center" display="flex">
+                <h1>Available Bikes ({bikes.length})</h1>
+              </Box>
+              {renderBikesList(bikes)}
+            </SwipeableDrawer>
+        </React.Fragment>
+      );
+      } catch (e) {
+        return <></>
+      }
+    }    
+    return <></>
   }
 
   return (
