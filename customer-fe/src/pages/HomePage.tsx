@@ -50,8 +50,12 @@ import Chip from '@mui/material/Chip';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 
-import ModeOfTravelIcon from '@mui/icons-material/ModeOfTravel';
 import FestivalTwoToneIcon from '@mui/icons-material/FestivalTwoTone';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import BookmarksIcon from '@mui/icons-material/Bookmarks';
+import BikeScooterIcon from '@mui/icons-material/BikeScooter';
+
+import Snackbar, { SnackbarOrigin } from '@mui/material/Snackbar';
 
 import './HomePage.css'
 
@@ -68,6 +72,11 @@ interface Bike {
   lng: number,
   type: number
 }
+
+interface State extends SnackbarOrigin {
+  open: boolean;
+}
+
 
 const CurrentLocation = ({ lat, lng } : AnyReactProps) => <div>
     <NavigationTwoToneIcon/>
@@ -109,6 +118,12 @@ const SimpleMap = () => {
 
   const [placeMarkers, setPlaceMarkers] = useState<any[]>([]);
 
+  const [directionsService, setDirectionsService] = useState<any>(null);
+  const [directionsRenderer, setDirectionsRenderer] = useState<any>(null);
+
+  const [warningOpen, setWarningOpen] = useState<any>(false);
+  const [warningMessage, setWarningMessage] = useState<string>("");
+
   useEffect(() => {
     setApikey(process.env.REACT_APP_GOOGLE_MAP_API_KEY as string);
       if (navigator.geolocation) {
@@ -145,7 +160,7 @@ const SimpleMap = () => {
       const location = new mapsObj.LatLng(lat, lng);
       const request = {
         location: location,
-        radius: '1000',
+        radius: '3000',
         type: ['tourist_attraction']
       };
       try {
@@ -228,6 +243,8 @@ const SimpleMap = () => {
       } = cluster.properties;
 
       if (isCluster) {
+        const markerColor = selectedCluster && selectedCluster == cluster.id ? "secondary" : "action";
+        const markerSize = selectedCluster && selectedCluster == cluster.id ? "medium" : "small";
         return (
           <Marker
             key={`cluster-${cluster.id}`}
@@ -236,7 +253,7 @@ const SimpleMap = () => {
           >            
             <IconButton onClick={(e) => onBikeMarkerClick(e, cluster.id)}>
               <Badge badgeContent={pointCount} color="warning">
-                  <RoomTwoToneIcon />
+                  <RoomTwoToneIcon color={markerColor} fontSize={markerSize} />
               </Badge>
             </IconButton>
           </Marker>
@@ -269,6 +286,15 @@ const SimpleMap = () => {
     gestureHandling: "greedy",
   };
 
+  const toggleBikesList = () => {
+    if (selectedCluster) {
+      setShowBikesList(!showBikesList)
+    } else {
+      setWarningMessage("Please, select bikes point.");
+      setWarningOpen(true);
+    }
+  }
+
   const renderBottomNavigation = () => {
     return (
       <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
@@ -279,9 +305,9 @@ const SimpleMap = () => {
             setBnValue(newValue);
           }}
         >
-          <BottomNavigationAction label="Recents" icon={<RestoreIcon />} />
-          <BottomNavigationAction label="Favorites" icon={<FavoriteIcon />} />
-          <BottomNavigationAction label="Folder" icon={<FolderIcon />} />
+          <BottomNavigationAction label="Log In" icon={<AccountCircleIcon />} />
+          <BottomNavigationAction label="Booked" icon={<BookmarksIcon />} />
+          <BottomNavigationAction label="Bikes" onClick={toggleBikesList} icon={<BikeScooterIcon />} />
         </BottomNavigation>
       </Paper>
     );
@@ -348,6 +374,28 @@ const SimpleMap = () => {
       },
       isLoaded: true
     });
+
+    const cluster = supercluster.getChildren(selectedCluster);
+    if (cluster.length) {
+      const coords = cluster[0].geometry.coordinates;
+      const origin = { lat: coords[1], lng: coords[0] };
+      const destination = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() }; 
+      const request = {
+        origin,
+        destination,
+        travelMode: mapsObj.TravelMode.BICYCLING,
+      };
+      if (directionsService && directionsRenderer) {
+        directionsService.route(request, (result:any, status:any) => {
+          if (status === mapsObj.DirectionsStatus.OK) {
+            directionsRenderer.setDirections(result);
+          } else {
+            console.error('Directions request failed due to ', status);
+          }
+        });
+      }
+    }
+
   }
 
   const renderSightseeingList = () => (
@@ -478,7 +526,10 @@ const SimpleMap = () => {
     <div style={{ height: '100vh', width: '100%' }}>
       {apiKey &&
         <GoogleMapReact
-          bootstrapURLKeys={{ key: apiKey, libraries: ['places'] }}
+          bootstrapURLKeys={{ 
+            key: apiKey, 
+            libraries: ['places', 'directions'] 
+          }}
           defaultCenter={defaultProps.center}
           defaultZoom={defaultProps.zoom}
           center={centerLocation.center}
@@ -488,6 +539,13 @@ const SimpleMap = () => {
             mapRef.current = map;
             placesServiceRef.current = new maps.places.PlacesService(map);
             setMapsObj(maps)
+            setDirectionsService(new maps.DirectionsService());
+            setDirectionsRenderer(new maps.DirectionsRenderer({ 
+              map,
+              markerOptions: {
+                icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png', // Customize the markers
+              },
+            }));
           }}
           onChange={onMapChange}
         >
@@ -507,7 +565,14 @@ const SimpleMap = () => {
 
       {renderListOfBikes()}
 
-      {/* {renderBottomNavigation()} */}
+      {renderBottomNavigation()}
+      <Snackbar
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        open={warningOpen}
+        onClose={() => setWarningOpen(false)}
+        message={warningMessage}
+        key='warning-toast'
+      />
     </div>
   );
 }
