@@ -35,6 +35,11 @@ export const entry = async () => {
         ctx.body = bikes.docs.map(doc => doc.data());
     })
 
+    router.get("/bike/:id", async (ctx) => {
+        const bike = await firestore.collection("bikes").doc(ctx.params.id).get();
+        ctx.body = bike.data();
+    })
+
     // noinspection JSUnresolvedReference
     app.use(router.routes())
         .use(router.allowedMethods())
