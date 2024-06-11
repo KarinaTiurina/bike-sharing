@@ -20,10 +20,12 @@ const bikes = veturiloResponse
         let bikes = place.bike_list ?? []
         return bikes.map(bike => ({
             ...bike,
-            place: {
-                uid: place.uid,
+            position: {
                 lat: place.lat,
                 lng: place.lng,
+            },
+            place: {
+                uid: place.uid,
                 name: place.name,
                 address: place.address,
                 spot: place.spot,
@@ -33,8 +35,9 @@ const bikes = veturiloResponse
                 maintenance: place.maintenance,
                 terminal_type: place.terminal_type
             },
-            is_occupied: false,
             current_user: null,
+            active: true,
+            state: "free"
         }))
     });
 
