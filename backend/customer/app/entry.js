@@ -1,7 +1,6 @@
 import Koa from 'koa';
 import Router from '@koa/router';
 import { Firestore } from '@google-cloud/firestore';
-import { readFileSync } from 'fs';
 
 export const entry = async () => {
     const firestore = new Firestore({
@@ -30,6 +29,9 @@ export const entry = async () => {
                 .where("place.lng", ">", lngMaybe - radiusMaybe)
                 .where("place.lng", "<", lngMaybe + radiusMaybe);
         }
+
+        bikesCollection = bikesCollection
+            .where("is_occupied", "==", "false");
 
         const bikes = await bikesCollection.get();
         ctx.body = bikes.docs.map(doc => doc.data());
