@@ -5,7 +5,7 @@ import { Firestore } from '@google-cloud/firestore';
 import { places } from "./common/bike-loader.js"
 
 const firestore = new Firestore({
-    projectId: process.env.PROJECT_ID,
+    projectId: process.env.GCP_PROJECT,
     databaseId: process.env.DATABASE_ID
 });
 

@@ -26,3 +26,13 @@ variable "oauth_client_secret" {}
 variable "db_deletion_protection" {
   default = true
 }
+
+variable "database_id" {}
+
+variable "jwks_uri" {}
+
+variable "issuer" {}
+
+variable "audience" {}
+
+variable "container_registry" {}

@@ -5,7 +5,7 @@ import axios from "axios"
 import * as crypto from "node:crypto"
 import { bikes } from "./common/bike-loader.js"
 
-const concurrentBikeMoves = 10
+const concurrentBikeMoves = 100
 const bikeMoveInterval = 1000
 const backendUrl = `http://localhost:3032`
 
@@ -18,6 +18,7 @@ while (true) {
         .sort(() => Math.random() - 0.5)
         .slice(0, concurrentBikeMoves)
 
+    const startTimestamp = Date.now()
     await Promise
         .all(
             bikesToUpdate.map(async bike => {
@@ -52,11 +53,13 @@ while (true) {
                         }
                     )
                     .catch(console.error)
-
-                console.log(`Bike ${bike.number} moved to ${newLat}, ${newLng} is active: ${active}`)
             })
         )
         .catch(console.error)
+
+    const endTimestamp = Date.now()
+    const elapsedTime = endTimestamp - startTimestamp
+    console.log(`Updated ${bikesToUpdate.length} bikes in ${elapsedTime}ms`)
 
     await sleep(bikeMoveInterval)
 }

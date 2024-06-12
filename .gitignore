@@ -1,6 +1,7 @@
 infra/terraform.tfvars
 .terraform*
 infra/terraform.tfstate
+infra/terraform.tfstate.backup
 node_modules
 package-lock.json
 .DS_Store

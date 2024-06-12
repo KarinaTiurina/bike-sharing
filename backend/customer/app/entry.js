@@ -10,7 +10,7 @@ import {uuid} from "uuidv4"
 
 export const entry = async () => {
     const firestore = new Firestore({
-        projectId: process.env.PROJECT_ID,
+        projectId: process.env.GCP_PROJECT,
         databaseId: process.env.DATABASE_ID
     });
 

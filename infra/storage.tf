@@ -73,7 +73,7 @@ resource "google_bigtable_instance" "bigtable_real_time_deletable" {
 
 
 resource "google_firestore_database" "firestore_db" {
-  name        = "firestore-db"
+  name        = var.database_id
   location_id = var.region
   type        = "FIRESTORE_NATIVE"
 

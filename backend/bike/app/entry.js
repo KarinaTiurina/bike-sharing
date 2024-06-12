@@ -7,7 +7,7 @@ import * as crypto from "node:crypto"
 
 export const entry = async () => {
     const firestore = new Firestore({
-        projectId: process.env.PROJECT_ID,
+        projectId: process.env.GCP_PROJECT,
         databaseId: process.env.DATABASE_ID
     });
 
