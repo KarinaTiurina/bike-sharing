@@ -6,7 +6,7 @@ import { bikes } from "./common/bike-loader.js"
 
 const firestore = new Firestore({
     projectId: process.env.GCP_PROJECT,
-    databaseId: process.env.DATABASE_ID
+    databaseId: process.env.FIRESTORE_DB_NAME
 });
 
 const collection = firestore.collection("bikes")

@@ -8,7 +8,7 @@ import * as crypto from "node:crypto"
 export const entry = async () => {
     const firestore = new Firestore({
         projectId: process.env.GCP_PROJECT,
-        databaseId: process.env.DATABASE_ID
+        databaseId: process.env.FIRESTORE_DB_NAME
     });
 
     const app = new Koa();
