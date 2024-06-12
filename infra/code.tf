@@ -201,14 +201,13 @@ resource "google_cloud_run_v2_service" "customer_fe" {
     containers {
       image = "${var.container_registry}/bike-sharing/bs-frontend-amd64:latest"
       ports {
-        container_port = 8080
+        container_port = 3000
       }
-    }
-
-    vpc_access {
-      egress = "ALL_TRAFFIC"
-      network_interfaces {
-        subnetwork = google_compute_subnetwork.public_subnetwork.id
+      resources {
+        limits = {
+          cpu    = "2"
+          memory = "1024Mi"
+        }
       }
     }
   }

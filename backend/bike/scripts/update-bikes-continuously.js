@@ -5,9 +5,10 @@ import axios from "axios"
 import * as crypto from "node:crypto"
 import { bikes } from "./common/bike-loader.js"
 
-const concurrentBikeMoves = 100
+const concurrentBikeMoves = 1
 const bikeMoveInterval = 1000
-const backendUrl = `http://localhost:3032`
+// const backendUrl = `http://localhost:3032`
+const backendUrl = `https://bike-api-unfaqwwbua-lm.a.run.app`
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
