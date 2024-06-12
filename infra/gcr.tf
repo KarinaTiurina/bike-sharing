@@ -28,6 +28,13 @@ output "support_api_gcr_uri" {
   value = data.google_container_registry_image.support_api_image.image_url
 }
 
+data "google_container_registry_image" "bike_api_image" {
+  name = "bike_api"
+}
+output "bike_api_gcr_uri" {
+  value = data.google_container_registry_image.bike_api_image.image_url
+}
+
 data "google_container_registry_image" "user_api_image" {
   name = "bike_user_api"
 }
@@ -48,3 +55,4 @@ data "google_container_registry_image" "customer_fe_image" {
 output "customer_fe_gcr_uri" {
   value = data.google_container_registry_image.customer_fe_image.image_url
 }
+
