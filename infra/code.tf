@@ -89,10 +89,6 @@ resource "google_cloud_run_v2_service" "customer_api" {
         }
       }
       env {
-        name = "DATABASE_ID"
-        value = var.database_id
-      }
-      env {
         name = "JWKS_URI"
         value = var.jwks_uri
       }
@@ -138,10 +134,6 @@ resource "google_cloud_run_v2_service" "bike_api" {
           cpu    = "2"
           memory = "1024Mi"
         }
-      }
-      env {
-        name = "DATABASE_ID"
-        value = var.database_id
       }
       env {
         name = "HMAC_SECRET"
