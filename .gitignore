@@ -4,3 +4,7 @@ infra/terraform.tfstate
 node_modules
 package-lock.json
 .DS_Store
+
+customer-fe/.env
+customer-fe/node_modules
+terraform.tfstate.backup
