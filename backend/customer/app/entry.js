@@ -1,12 +1,12 @@
-import { metersToLatLng, parseNullableInt, parseNullableFloat, applyOptional } from "./utils.js"
+import {applyOptional, metersToLatLng, parseNullableFloat, parseNullableInt} from "./utils.js"
 
 import Koa from 'koa';
 import Router from '@koa/router';
-import { Firestore } from '@google-cloud/firestore';
+import {Firestore} from '@google-cloud/firestore';
 import session from 'koa-session';
 import jwt from "koa-jwt";
-import { koaJwtSecret } from "jwks-rsa"
-import { uuid } from "uuidv4"
+import {koaJwtSecret} from "jwks-rsa"
+import {uuid} from "uuidv4"
 
 export const entry = async () => {
     const firestore = new Firestore({
@@ -41,6 +41,15 @@ export const entry = async () => {
         ctx.body = bikes.docs.map(doc => doc.data());
     })
 
+    router.get("/bike/my", async (ctx) => {
+        const bikes = await firestore
+            .collection("bikes")
+            .where("current_user", "==", ctx.state.user.email)
+            .get();
+
+        ctx.body = bikes.docs.map(doc => doc.data());
+    })
+
     router.get("/bike/:id", async (ctx) => {
         const bike = await firestore
             .collection("bikes")
@@ -48,17 +57,6 @@ export const entry = async () => {
             .get();
 
         ctx.body = bike.data();
-    })
-
-    router.get("/bike/my", async (ctx) => {
-        const bikes = await firestore
-            .collection("bikes")
-            .where("current_user", "==", ctx.state.user.email)
-            .get();
-
-        const bikesData = bikes.docs.map(doc => doc.data());
-
-        ctx.body = bikesData;
     })
 
     router.post("/bike/:id/book", async (ctx) => {
@@ -242,7 +240,8 @@ export const entry = async () => {
             }),
             audience: process.env.AUDIENCE,
             issuer: process.env.ISSUER,
-            algorithms: ['RS256']
+            algorithms: ['RS256'],
+            debug: true
         }))
         .use(router.routes())
         .use(router.allowedMethods())
