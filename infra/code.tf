@@ -197,8 +197,8 @@ resource "google_cloud_run_v2_service" "customer_fe" {
       }
       resources {
         limits = {
-          cpu    = "2"
-          memory = "1024Mi"
+          cpu    = "4"
+          memory = "4096Mi"
         }
       }
     }

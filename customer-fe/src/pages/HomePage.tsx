@@ -142,6 +142,9 @@ const SimpleMap = () => {
 
   const [mapPoints, setMapPoints] = useState<any>([]);
 
+  const timerIdRef = useRef<any>(null);
+  const [isPollingEnabled, setIsPollingEnabled] = useState(true);
+
   useEffect(() => {
     onAuthStateChanged(auth, (signedInUser) => {
       if (signedInUser) {
@@ -224,9 +227,10 @@ const SimpleMap = () => {
 
   async function fetchCustomerBikes() {
     try {
+      // console.log(`fetching bikes for user ${!!user}`)
       if (user) {
         const otherFetched:any = await getBikes(user.accessToken);
-        // console.log(user.accessToken);
+        // console.log(`Fetched bikes: ${otherFetched}`);
         setBikes(otherFetched?.data?.map((b:any) => {
           return {
             id: b.number,
@@ -240,6 +244,35 @@ const SimpleMap = () => {
       console.log(e);
     }
   }
+
+  useEffect(() => {
+    const pollingCallback = () => {
+      // Your polling logic here
+      console.log('Polling...');
+
+      fetchCustomerBikes();
+    };
+
+    const startPolling = () => {
+      // pollingCallback(); // To immediately start fetching data
+      // Polling every 30 seconds
+      timerIdRef.current = setInterval(pollingCallback, 3000);
+    };
+
+    const stopPolling = () => {
+      clearInterval(timerIdRef.current);
+    };
+
+    if (isPollingEnabled) {
+      startPolling();
+    } else {
+      stopPolling();
+    }
+
+    return () => {
+      stopPolling();
+    };
+  }, [isPollingEnabled]);
 
   async function fetchCustomerMyBikes() {
     try {
@@ -297,7 +330,7 @@ const SimpleMap = () => {
     points: mapPoints,
     bounds,
     zoom,
-    options: { radius: 75, maxZoom: 20 }
+    options: { radius: 75, maxZoom: 60 }
   });
 
 
