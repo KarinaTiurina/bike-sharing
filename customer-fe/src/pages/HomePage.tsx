@@ -228,18 +228,18 @@ const SimpleMap = () => {
   async function fetchCustomerBikes() {
     try {
       // console.log(`fetching bikes for user ${!!user}`)
-      if (user) {
-        const otherFetched:any = await getBikes(user.accessToken);
-        // console.log(`Fetched bikes: ${otherFetched}`);
-        setBikes(otherFetched?.data?.map((b:any) => {
-          return {
-            id: b.number,
-            lat: b.position.lat,
-            lng: b.position.lng,
-            type: b.bike_type
-          } as Bike
-        }))
-      }
+      // if (user) {
+      const otherFetched:any = await getBikes();
+      // console.log(`Fetched bikes: ${otherFetched}`);
+      setBikes(otherFetched?.data?.map((b:any) => {
+        return {
+          id: b.number,
+          lat: b.position.lat,
+          lng: b.position.lng,
+          type: b.bike_type
+        } as Bike
+      }))
+      // }
     } catch(e) {
       console.log(e);
     }
