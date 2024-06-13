@@ -4,8 +4,10 @@ import RoomTwoToneIcon from '@mui/icons-material/RoomTwoTone';
 import NavigationTwoToneIcon from '@mui/icons-material/NavigationTwoTone';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
+
 import { callNextBikesApi } from '../api/bikes';
-import { callNearBySearch } from '../api/maps';
+import { getBikes } from '../api/customer';
+
 import IconButton from '@mui/material/IconButton';
 import useSupercluster from 'use-supercluster';
 import Badge, { BadgeProps } from '@mui/material/Badge';
@@ -56,6 +58,12 @@ import BookmarksIcon from '@mui/icons-material/Bookmarks';
 import BikeScooterIcon from '@mui/icons-material/BikeScooter';
 
 import Snackbar, { SnackbarOrigin } from '@mui/material/Snackbar';
+
+// import SignIn from '../components/sign-in.component';
+import { signInWithGooglePopup, auth } from "../utils/firebase.utils"
+import { onAuthStateChanged } from "firebase/auth";
+
+import DirectionsOffIcon from '@mui/icons-material/DirectionsOff';
 
 import './HomePage.css'
 
@@ -120,9 +128,22 @@ const SimpleMap = () => {
 
   const [directionsService, setDirectionsService] = useState<any>(null);
   const [directionsRenderer, setDirectionsRenderer] = useState<any>(null);
+  const [isDirectionShown, setIsDirectionShown] = useState(false);
 
   const [warningOpen, setWarningOpen] = useState<any>(false);
   const [warningMessage, setWarningMessage] = useState<string>("");
+
+  const [user, setUser] = useState<any>(null);
+
+  const [mapPoints, setMapPoints] = useState<any>([]);
+
+  useEffect(() => {
+    onAuthStateChanged(auth, (signedInUser) => {
+      if (signedInUser) {
+        setUser(signedInUser);
+      }
+    });
+  }, [])
 
   useEffect(() => {
     setApikey(process.env.REACT_APP_GOOGLE_MAP_API_KEY as string);
@@ -196,23 +217,58 @@ const SimpleMap = () => {
     setBikes(fetched);
   }
 
+  async function fetchCustomerBikes() {
+    try {
+      if (user) {
+        const otherFetched:any = await getBikes(user.accessToken);
+        setBikes(otherFetched?.data?.map((b:any) => {
+          return {
+            id: b.number,
+            lat: b.position.lat,
+            lng: b.position.lng,
+            type: b.bike_type
+          } as Bike
+        }))
+      }
+    } catch(e) {
+      console.log(e);
+    }
+  }
+
   useEffect(() => {
-    fetchBikes();
-  }, [])
+    fetchCustomerBikes();
+  }, [user])
+
+  useEffect(() => {
+    setMapPoints(bikesToPointsConverter());
+  }, [bikes])
+
+  const logGoogleUser = async () => {
+    const response = await signInWithGooglePopup();
+    setUser(response.user); // response.user.accessToken
+  }
+
+  const hideDirections = () => {
+    directionsRenderer.set('directions', null);
+    setIsDirectionShown(false);
+  }
 
   const bikesToPointsConverter = () => {
-    return bikes.map(b => {
-      return {
-        type: "Feature",
-        properties: { cluster: false, bikeId: b.id, type: b.type },
-        geometry: { type: "Point", coordinates: [b.lng, b.lat]}
-      }
-    })
+    if (bikes?.length) {
+      return bikes.map(b => {
+        return {
+          type: "Feature",
+          properties: { cluster: false, bikeId: b.id, type: b.type },
+          geometry: { type: "Point", coordinates: [b.lng, b.lat]}
+        }
+      })
+    }
+    return [];
   }
 
   // get clusters
   const { clusters, supercluster } = useSupercluster({
-    points: bikesToPointsConverter(),
+    points: mapPoints,
     bounds,
     zoom,
     options: { radius: 75, maxZoom: 20 }
@@ -305,9 +361,16 @@ const SimpleMap = () => {
             setBnValue(newValue);
           }}
         >
-          <BottomNavigationAction label="Log In" icon={<AccountCircleIcon />} />
-          <BottomNavigationAction label="Booked" icon={<BookmarksIcon />} />
+          {!user &&
+            <BottomNavigationAction label="Log In" onClick={logGoogleUser} icon={<AccountCircleIcon />} />
+          }
+          {user &&
+            <BottomNavigationAction label="Booked" onClick={fetchCustomerBikes} icon={<BookmarksIcon />} />
+          }
           <BottomNavigationAction label="Bikes" onClick={toggleBikesList} icon={<BikeScooterIcon />} />
+          {isDirectionShown && 
+            <BottomNavigationAction label="Hide route" onClick={hideDirections} icon={<DirectionsOffIcon />} />
+          }
         </BottomNavigation>
       </Paper>
     );
@@ -363,6 +426,21 @@ const SimpleMap = () => {
     </Box>
   );
 
+  const getBikesOfTheCluster = (clusterId:any) => {
+    let bikes:any = []
+    const clusterItems = supercluster.getChildren(clusterId).map((o: any) => o.properties);
+    if (clusterItems.length) {
+      clusterItems.forEach((ci:any) => {
+        if (ci.cluster) {
+          bikes = bikes.concat(getBikesOfTheCluster(ci.cluster_id))
+        } else {
+          bikes.push(ci);
+        }
+      })
+    }
+    return bikes;
+  }
+
   const onPlaceShow = (e: any, place: any) => {
     e.preventDefault();
     setPlaceMarkers([place]);
@@ -389,6 +467,7 @@ const SimpleMap = () => {
         directionsService.route(request, (result:any, status:any) => {
           if (status === mapsObj.DirectionsStatus.OK) {
             directionsRenderer.setDirections(result);
+            setIsDirectionShown(true);
           } else {
             console.error('Directions request failed due to ', status);
           }
@@ -448,8 +527,7 @@ const SimpleMap = () => {
     const anchor = 'right';
     if (selectedCluster) {
       try {
-        const bikes = supercluster.getChildren(selectedCluster).map((o: any) => o.properties)
-        // console.log(bikes)
+        const bikes = getBikesOfTheCluster(selectedCluster);
         return (
           <React.Fragment key={anchor}>
             <SwipeableDrawer
@@ -473,16 +551,12 @@ const SimpleMap = () => {
                 <CustomTabPanel value={tabValue} index={1}>
                   {renderSightseeingList()}
                 </CustomTabPanel>
-              </Box>
-              {/* <Box component="section" sx={{ p: 2 }} alignItems="center" display="flex">
-                <h1>Available Bikes ({bikes.length})</h1>
-              </Box> */}
-              
+              </Box>              
             </SwipeableDrawer>
         </React.Fragment>
       );
       } catch (e) {
-        console.log(e)
+        // console.log(e)
         return <></>
       }
     }    

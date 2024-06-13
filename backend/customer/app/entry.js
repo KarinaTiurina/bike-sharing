@@ -7,6 +7,9 @@ import session from 'koa-session';
 import jwt from "koa-jwt";
 import { koaJwtSecret } from "jwks-rsa"
 import { uuid } from "uuidv4"
+// const cors = require('@koa/cors');
+import cors from '@koa/cors';
+
 
 export const entry = async () => {
     const firestore = new Firestore({
@@ -15,6 +18,7 @@ export const entry = async () => {
     });
 
     const app = new Koa();
+    app.use(cors());
     const router = new Router();
 
     router.get("/bike", async (ctx) => {
@@ -41,16 +45,8 @@ export const entry = async () => {
         ctx.body = bikes.docs.map(doc => doc.data());
     })
 
-    router.get("/bike/:id", async (ctx) => {
-        const bike = await firestore
-            .collection("bikes")
-            .doc(ctx.params.id)
-            .get();
-
-        ctx.body = bike.data();
-    })
-
     router.get("/bike/my", async (ctx) => {
+        console.log("KDBG "+ ctx.state.user.email);
         const bikes = await firestore
             .collection("bikes")
             .where("current_user", "==", ctx.state.user.email)
@@ -59,6 +55,15 @@ export const entry = async () => {
         const bikesData = bikes.docs.map(doc => doc.data());
 
         ctx.body = bikesData;
+    })
+
+    router.get("/bike/:id", async (ctx) => {
+        const bike = await firestore
+            .collection("bikes")
+            .doc(ctx.params.id)
+            .get();
+
+        ctx.body = bike.data();
     })
 
     router.post("/bike/:id/book", async (ctx) => {
