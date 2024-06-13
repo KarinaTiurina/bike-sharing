@@ -2,9 +2,9 @@ import axios from 'axios';
 
 const getBikes = async (token) => {
   const url = `${process.env.REACT_APP_CUSTOMER_API}/bike`;
-  const headers = { 'Authorization': `Bearer ${token}` };
+  // const headers = { 'Authorization': `Bearer ${token}` };
 
-  const response = await axios.get(url, { headers });
+  const response = await axios.get(url);
 
   // console.log(response);
   return response;
