@@ -5,8 +5,10 @@ import Router from '@koa/router';
 import {Firestore} from '@google-cloud/firestore';
 import session from 'koa-session';
 import jwt from "koa-jwt";
-import {koaJwtSecret} from "jwks-rsa"
-import {uuid} from "uuidv4"
+import { koaJwtSecret } from "jwks-rsa"
+import { uuid } from "uuidv4"
+import cors from '@koa/cors';
+
 
 export const entry = async () => {
     const firestore = new Firestore({
@@ -15,6 +17,7 @@ export const entry = async () => {
     });
 
     const app = new Koa();
+    app.use(cors());
     const router = new Router();
 
     router.get("/bike", async (ctx) => {
