@@ -227,10 +227,10 @@ const SimpleMap = () => {
 
   async function fetchCustomerBikes() {
     try {
-      console.log(`fetching bikes for user ${!!user}`)
+      // console.log(`fetching bikes for user ${!!user}`)
       if (user) {
         const otherFetched:any = await getBikes(user.accessToken);
-        console.log(`Fetched bikes: ${otherFetched}`);
+        // console.log(`Fetched bikes: ${otherFetched}`);
         setBikes(otherFetched?.data?.map((b:any) => {
           return {
             id: b.number,
@@ -330,7 +330,7 @@ const SimpleMap = () => {
     points: mapPoints,
     bounds,
     zoom,
-    options: { radius: 75, maxZoom: 20 }
+    options: { radius: 75, maxZoom: 60 }
   });
 
 
