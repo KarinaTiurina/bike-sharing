@@ -6,7 +6,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
 
 import { callNextBikesApi } from '../api/bikes';
-import { getBikes } from '../api/customer';
+import { getBikes, bookBikeApi, getMyBikes, rentBikeApi, returnBikeApi } from '../api/customer';
 
 import IconButton from '@mui/material/IconButton';
 import useSupercluster from 'use-supercluster';
@@ -65,6 +65,9 @@ import { onAuthStateChanged } from "firebase/auth";
 
 import DirectionsOffIcon from '@mui/icons-material/DirectionsOff';
 
+// import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';
+import FaceIcon from '@mui/icons-material/Face';
+
 import './HomePage.css'
 
 interface AnyReactProps {
@@ -78,7 +81,8 @@ interface Bike {
   bikeId?: string,
   lat: number,
   lng: number,
-  type: number
+  type: number,
+  state?: string
 }
 
 interface State extends SnackbarOrigin {
@@ -115,6 +119,7 @@ const SimpleMap = () => {
     isLoaded: false
   });
   const [bikes, setBikes] = useState<Bike[]>([])
+  const [myBikes, setMyBikes] = useState<Bike[]>([])
 
   const [bounds, setBounds] = useState<any>(null);
   const [zoom, setZoom] = useState(14);
@@ -212,21 +217,42 @@ const SimpleMap = () => {
     }
   }, [tabValue, selectedCluster])
 
-  async function fetchBikes() {
-    const fetched: Bike[] = await callNextBikesApi();
-    setBikes(fetched);
-  }
+  // async function fetchBikes() {
+  //   const fetched: Bike[] = await callNextBikesApi();
+  //   setBikes(fetched);
+  // }
 
   async function fetchCustomerBikes() {
     try {
       if (user) {
         const otherFetched:any = await getBikes(user.accessToken);
+        // console.log(user.accessToken);
         setBikes(otherFetched?.data?.map((b:any) => {
           return {
             id: b.number,
             lat: b.position.lat,
             lng: b.position.lng,
             type: b.bike_type
+          } as Bike
+        }))
+      }
+    } catch(e) {
+      console.log(e);
+    }
+  }
+
+  async function fetchCustomerMyBikes() {
+    try {
+      if (user) {
+        const otherFetched:any = await getMyBikes(user.accessToken);
+        setMyBikes(otherFetched?.data?.map((b:any) => {
+          return {
+            id: b.number,
+            bikeId: b.number,
+            lat: b.position.lat,
+            lng: b.position.lng,
+            type: b.bike_type,
+            state: b.state
           } as Bike
         }))
       }
@@ -350,6 +376,15 @@ const SimpleMap = () => {
       setWarningOpen(true);
     }
   }
+  const toggleMyBikesList = () => {
+    if (user) {
+      fetchCustomerMyBikes();
+      setShowMyBikesList(!showMyBikesList)
+    } else {
+      setWarningMessage("Please, log in");
+      setWarningOpen(true);
+    }
+  }
 
   const renderBottomNavigation = () => {
     return (
@@ -365,7 +400,7 @@ const SimpleMap = () => {
             <BottomNavigationAction label="Log In" onClick={logGoogleUser} icon={<AccountCircleIcon />} />
           }
           {user &&
-            <BottomNavigationAction label="Booked" onClick={fetchCustomerBikes} icon={<BookmarksIcon />} />
+            <BottomNavigationAction label="Booked" onClick={toggleMyBikesList} icon={<BookmarksIcon />} />
           }
           <BottomNavigationAction label="Bikes" onClick={toggleBikesList} icon={<BikeScooterIcon />} />
           {isDirectionShown && 
@@ -377,6 +412,7 @@ const SimpleMap = () => {
   }
 
   const [showBikesList, setShowBikesList] = useState(false);
+  const [showMyBikesList, setShowMyBikesList] = useState(false);
 
   const toggleDrawer = (open: boolean) =>
     (event: React.KeyboardEvent | React.MouseEvent) => {
@@ -392,6 +428,74 @@ const SimpleMap = () => {
       setShowBikesList(open);
   };
 
+  const toggleMyBikesDrawer = (open: boolean) =>
+    (event: React.KeyboardEvent | React.MouseEvent) => {
+      if (
+        event &&
+        event.type === 'keydown' &&
+        ((event as React.KeyboardEvent).key === 'Tab' ||
+          (event as React.KeyboardEvent).key === 'Shift')
+      ) {
+        console.log('return')
+        return;
+      }
+      setShowMyBikesList(open);
+  };
+
+  const bookBike = async (bikeId:any) => {
+    try {
+      if (user) {
+        await bookBikeApi(bikeId, user.accessToken);
+        setWarningMessage("Sure! We'll hide it for you");
+        setWarningOpen(true);
+        await fetchCustomerBikes();
+      } else {
+        setWarningMessage("Please, log in");
+        setWarningOpen(true);
+      }
+    } catch(e) {
+      console.log(e);
+      setWarningMessage("Sorry:( Please, try another bike");
+      setWarningOpen(true);
+    }
+  }
+
+  const rentBike = async (bikeId:any) => {
+    try {
+      if (user) {
+        await rentBikeApi(bikeId, user.accessToken);
+        setWarningMessage("Thanks! Have a nice ride :)");
+        setWarningOpen(true);
+        await fetchCustomerBikes();
+      } else {
+        setWarningMessage("Please, log in");
+        setWarningOpen(true);
+      }
+    } catch(e) {
+      console.log(e);
+      setWarningMessage("Sorry:( Please, try another bike");
+      setWarningOpen(true);
+    }
+  }
+
+  const returnBike = async (bikeId:any) => {
+    try {
+      if (user) {
+        await returnBikeApi(bikeId, user.accessToken);
+        setWarningMessage("Thanks! :)");
+        setWarningOpen(true);
+        await fetchCustomerBikes();
+      } else {
+        setWarningMessage("Please, log in");
+        setWarningOpen(true);
+      }
+    } catch(e) {
+      console.log(e);
+      setWarningMessage("Sorry:( Please, contact support");
+      setWarningOpen(true);
+    }
+  }
+
   const renderBikesList = (bikes: Bike[]) => (
     <Box
       sx={{ width: 400 }}
@@ -400,7 +504,7 @@ const SimpleMap = () => {
       onKeyDown={toggleDrawer(false)}
     >
       {bikes.map(b => (
-        <Card sx={{ display: 'flex', margin: 1 }} key={b.id} variant="outlined">
+        <Card sx={{ display: 'flex', margin: 1 }} key={b.bikeId} variant="outlined">
           <Box sx={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
             <CardContent sx={{ flex: '1 0 auto' }}>
               <Typography component="div" variant="h6">
@@ -411,8 +515,45 @@ const SimpleMap = () => {
               </Typography>
             </CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', pl: 1, pb: 1 }}>
-              <Button variant="contained" size='small'>Rent</Button>
-              <Button variant="outlined" size='small'>Book</Button>
+              <Button variant="contained" size='small' onClick={() => rentBike(b.bikeId)}>Rent</Button>
+              <Button variant="outlined" size='small' onClick={() => bookBike(b.bikeId)}>Book</Button>
+            </Box>
+          </Box>
+          <CardMedia
+            component="img"
+            sx={{ width: '50%', maxHeight: 150, objectFit: "contain" }}
+            image={`./bike_types/${b.type}.png`}
+            alt={`Bike type: ${b.type}`}
+          />
+        </Card>
+      ))}
+    </Box>
+  );
+
+  const renderMyBikesList = (bikes: Bike[]) => (
+    <Box
+      sx={{ width: 400 }}
+      role="presentation"
+      onClick={toggleMyBikesDrawer(false)}
+      onKeyDown={toggleMyBikesDrawer(false)}
+    >
+      {!bikes.length && <p style={{margin:'16px'}}>No booked/rented bikes...</p>}
+      {bikes.map(b => (
+        <Card sx={{ display: 'flex', margin: 1 }} key={b.bikeId} variant="outlined">
+          <Box sx={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
+            <CardContent sx={{ flex: '1 0 auto' }}>
+              <Typography component="div" variant="h6">
+                Bike: {b.bikeId}
+              </Typography>
+              <Typography variant="subtitle1" color="text.secondary" component="div">
+                <Chip label={b.state} size='small' />
+              </Typography>
+            </CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', pl: 1, pb: 1 }}>
+              <Button variant="contained" size='small' onClick={() => returnBike(b.bikeId)}>Return</Button>
+              {b.state === 'booked' &&
+                <Button variant="outlined" size='small' onClick={() => rentBike(b.bikeId)}>Rent</Button>
+              }
             </Box>
           </Box>
           <CardMedia
@@ -563,6 +704,29 @@ const SimpleMap = () => {
     return <></>
   }
 
+  const renderListOfMyBikes = () => {
+    const anchor = 'left';
+    return (
+      <React.Fragment key={anchor}>
+        <SwipeableDrawer
+          anchor={anchor}
+          open={showMyBikesList}
+          onClose={toggleMyBikesDrawer(false)}
+          onOpen={toggleMyBikesDrawer(true)}
+          disableBackdropTransition={!iOS}
+          disableDiscovery={iOS}
+        >
+          <Box component="section" sx={{ minWidth: 400 }} alignItems="center">
+            <Box flexDirection='row' sx={{padding: 2}}>
+              <Chip icon={<FaceIcon />} label={user?.email} variant="outlined" />
+            </Box>
+            {renderMyBikesList(myBikes)}
+          </Box>              
+        </SwipeableDrawer>
+    </React.Fragment>
+  );
+  }
+
   interface TabPanelProps {
     children?: React.ReactNode;
     index: number;
@@ -638,6 +802,7 @@ const SimpleMap = () => {
       </Box>}
 
       {renderListOfBikes()}
+      {renderListOfMyBikes()}
 
       {renderBottomNavigation()}
       <Snackbar
