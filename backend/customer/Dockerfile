@@ -1,11 +1,11 @@
-FROM node:latest
+FROM --platform=linux/amd64 node:latest
 
 WORKDIR /app
 COPY package.json /app
 COPY package-lock.json /app
 RUN npm install
 
-COPY app /app
+COPY app /app/app
 COPY index.js /app
 
 CMD ["node", "index.js"]
