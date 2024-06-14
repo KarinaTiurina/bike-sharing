@@ -1,0 +1,98 @@
+name: emitters
+
+x-emitter:
+  build: &emitter-build
+    context: .
+  environment: &emitter-env
+    VETURILO_API_URL: https://api-gateway.nextbike.pl/api/maps/service/vw/locations
+
+services:
+  e1:
+    environment:
+      <<: *emitter-env
+      BIKE_IDS_FILE: bikes/bikes_1.txt
+    build:
+      <<: *emitter-build
+      args:
+        seconds_delay: 5.454
+  e2:
+    environment:
+      <<: *emitter-env
+      BIKE_IDS_FILE: bikes/bikes_2.txt
+    build:
+      <<: *emitter-build
+      args:
+        seconds_delay: 10.908
+  e3:
+    environment:
+      <<: *emitter-env
+      BIKE_IDS_FILE: bikes/bikes_3.txt
+    build:
+      <<: *emitter-build
+      args:
+        seconds_delay: 16.362
+  e4:
+    environment:
+      <<: *emitter-env
+      BIKE_IDS_FILE: bikes/bikes_4.txt
+    build:
+      <<: *emitter-build
+      args:
+        seconds_delay: 21.816
+  e5:
+    environment:
+      <<: *emitter-env
+      BIKE_IDS_FILE: bikes/bikes_5.txt
+    build:
+      <<: *emitter-build
+      args:
+        seconds_delay: 27.27
+  e6:
+    environment:
+      <<: *emitter-env
+      BIKE_IDS_FILE: bikes/bikes_6.txt
+    build:
+      <<: *emitter-build
+      args:
+        seconds_delay: 32.724
+  e7:
+    environment:
+      <<: *emitter-env
+      BIKE_IDS_FILE: bikes/bikes_7.txt
+    build:
+      <<: *emitter-build
+      args:
+        seconds_delay: 38.178
+  e8:
+    environment:
+      <<: *emitter-env
+      BIKE_IDS_FILE: bikes/bikes_8.txt
+    build:
+      <<: *emitter-build
+      args:
+        seconds_delay: 43.632
+  e9:
+    environment:
+      <<: *emitter-env
+      BIKE_IDS_FILE: bikes/bikes_9.txt
+    build:
+      <<: *emitter-build
+      args:
+        seconds_delay: 49.086
+  e10:
+    environment:
+      <<: *emitter-env
+      BIKE_IDS_FILE: bikes/bikes_10.txt
+    build:
+      <<: *emitter-build
+      args:
+        seconds_delay: 54.54
+  e11:
+    environment:
+      <<: *emitter-env
+      BIKE_IDS_FILE: bikes/bikes_11.txt
+    build:
+      <<: *emitter-build
+      args:
+        seconds_delay: 59.994
+
